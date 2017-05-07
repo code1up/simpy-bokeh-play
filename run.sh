@@ -1,2 +1,2 @@
-python3 split.py
+python3 sim.py
 

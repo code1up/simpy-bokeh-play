@@ -1,57 +1,67 @@
 """DOCSTRING"""
-from bokeh.layouts import column, gridplot
-from bokeh.models import ColumnDataSource
-from bokeh.plotting import curdoc, figure
-from bokeh.driving import count
+import bokeh.layouts
+import bokeh.models
+import bokeh.plotting
+import bokeh.driving
 
 BUFSIZE = 200
 
-source = ColumnDataSource(dict(
+source = bokeh.models.ColumnDataSource(dict(
     time=[],
     capacity=[]
 ))
 
 
-def _create_prices(t):
+def get_capacity(time):
     """DOCSTRING"""
-    return t
+    return time
 
 
-@count()
-def update(t):
-    capacity = _create_prices(t)
+@bokeh.driving.count()
+def update(time):
+    """DOCSTRING"""
+    capacity = get_capacity(time)
 
     new_data = dict(
-        time=[t],
-        capacity=[t ** 2]
+        time=[time],
+        capacity=[capacity]
     )
 
     source.stream(new_data, 300)
 
 
 def create_chart():
-    p = figure(
+    """DOCSTRING"""
+    figure = bokeh.plotting.figure(
         plot_height=500,
         tools="xpan,xwheel_zoom,xbox_zoom,reset",
         x_axis_type=None,
         y_axis_location="right")
 
-    p.x_range.follow = "end"
-    p.x_range.follow_interval = 100
-    p.x_range.range_padding = 0
+    figure.x_range.follow = "end"
+    figure.x_range.follow_interval = 100
+    figure.x_range.range_padding = 0
 
-    p.line(
+    figure.line(
         x='time',
         y='capacity',
-        alpha=0.2,
-        line_width=3,
-        color='navy',
+        alpha=1.0,
+        line_width=2,
+        color='blue',
         source=source)
 
-    curdoc().add_root(column(gridplot(
-        [[p]], toolbar_location="left", plot_width=1000)))
+    document = bokeh.plotting.curdoc()
 
-    curdoc().add_periodic_callback(update, 50)
-    curdoc().title = "CAPACITY"
+    gridplot = bokeh.layouts.gridplot(
+        [[figure]],
+        toolbar_location="left",
+        plot_width=1000)
+
+    column = bokeh.layouts.column(gridplot)
+
+    document.add_root(column)
+    document.add_periodic_callback(update, 50)
+    document.title = "CAPACITY"
+
 
 create_chart()

@@ -28,7 +28,7 @@ source = ColumnDataSource(dict(
 p = figure(
     plot_height=500,
     tools="xpan,xwheel_zoom,xbox_zoom,reset",
-    x_axis_type=None,
+    x_axis_type='datetime',
     y_axis_location="right")
 
 p.x_range.follow = "end"

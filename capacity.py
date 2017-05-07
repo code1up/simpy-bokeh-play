@@ -18,7 +18,8 @@ BUFSIZE = 200
 
 source = bokeh.models.ColumnDataSource(dict(
     time=[],
-    capacity=[]
+    capacity=[],
+    count=[]
 ))
 
 env = simpy.Environment()
@@ -34,18 +35,21 @@ def get_capacity(time):
 def update_chart(time):
     """DOCSTRING"""
     env.run(until=time)
-    capacity = queue.capacity.level  # get_capacity(time)
+
+    capacity = 4096 - queue.capacity.level  # get_capacity(time)
+    count = len(queue.capacity.get_queue)
 
     new_data = dict(
         time=[time],
-        capacity=[capacity]
+        capacity=[capacity],
+        count=[count]
     )
 
     source.stream(new_data, 300)
 
     if random() > 0.9:
-        size = int((MESSAGE_BLOCK_SIZE / 2) * random())
-        message = Message(correlation_id='A', size=size)
+        size = int((MESSAGE_BLOCK_SIZE * 4) * random())
+        message = Message(correlation_id=time, size=size)
 
         env.process(queue.queue_message(message=message))
 
@@ -56,11 +60,16 @@ def create_chart():
         plot_height=500,
         tools="xpan,xwheel_zoom,xbox_zoom,reset",
         x_axis_type=None,
-        y_axis_location="right")
+        y_axis_location="right",
+        y_range=(0, 5000))
 
     figure.x_range.follow = "end"
     figure.x_range.follow_interval = 30000
     figure.x_range.range_padding = 0
+
+    figure.extra_y_ranges = {
+        'count': bokeh.models.Range1d(start=0, end=100)
+    }
 
     figure.line(
         x='time',
@@ -70,7 +79,21 @@ def create_chart():
         color='blue',
         source=source)
 
+    figure.line(
+        x='time',
+        y='count',
+        alpha=1.0,
+        line_width=2,
+        color='red',
+        y_range_name='count',
+        source=source)
+
+    figure.add_layout(
+        bokeh.models.LinearAxis(y_range_name='count'), 'left')
+
     document = bokeh.plotting.curdoc()
+
+    figure.xaxis.axis_label = 't'
 
     gridplot = bokeh.layouts.gridplot(
         [[figure]],
@@ -80,7 +103,7 @@ def create_chart():
     column = bokeh.layouts.column(gridplot)
 
     document.add_root(column)
-    document.add_periodic_callback(update_chart, 100)
+    document.add_periodic_callback(update_chart, 10)
     document.title = "CAPACITY"
 
 
